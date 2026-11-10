@@ -1,3 +1,67 @@
+# GlowPlan: self-contained GitHub Actions Android APK build.
+# Upload ONLY this file as .github/workflows/build-android-apk.yml.
+# The workflow reconstructs the GlowPlan Android source before building.
+name: Build GlowPlan Android APK
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - '.github/workflows/build-android-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Create GlowPlan Android project
+        shell: bash
+        run: |
+          python3 - <<'PYCODE'
+          import base64
+          import io
+          import zipfile
+          archive = base64.b64decode('''
+          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
